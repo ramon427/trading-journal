@@ -12,16 +12,23 @@ export default function Customize() {
   const [theme, setTheme] = useState<'light' | 'dark'>(loadTheme());
 
   useEffect(() => {
-    const t = loadTrades();
-    setTrades(t);
-    refreshAllStats(t);
-    initializeCustomization();
+    let isMounted = true;
+    (async () => {
+      const t = await loadTrades();
+      if (!isMounted) return;
+      setTrades(t);
+      refreshAllStats(t);
+      initializeCustomization();
+    })();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
     <div className="container mx-auto px-6 py-8 max-w-7xl">
-      <CustomizePage trades={trades} theme={theme} onRefresh={() => {
-        const t = loadTrades();
+      <CustomizePage trades={trades} theme={theme} onRefresh={async () => {
+        const t = await loadTrades();
         setTrades(t);
         refreshAllStats(t);
       }} />

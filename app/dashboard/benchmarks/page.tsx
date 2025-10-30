@@ -12,9 +12,20 @@ export default function BenchmarksPage() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('pnl');
 
   useEffect(() => {
-    setTrades(loadTrades());
-    setJournalEntries(loadJournalEntries());
-    setDisplayMode(loadSettings().displayMode);
+    let isMounted = true;
+    (async () => {
+      const [tradesData, journalData] = await Promise.all([
+        loadTrades(),
+        loadJournalEntries(),
+      ]);
+      if (!isMounted) return;
+      setTrades(tradesData);
+      setJournalEntries(journalData);
+      setDisplayMode(loadSettings().displayMode);
+    })();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const stats = useMemo(() => calculateStatistics(trades), [trades]);

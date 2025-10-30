@@ -19,10 +19,21 @@ export default function AddTrade() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('pnl');
 
   useEffect(() => {
-    setTrades(loadTrades());
-    setJournalEntries(loadJournalEntries());
-    setTemplates(loadTemplates());
-    setDisplayMode(loadSettings().displayMode);
+    let isMounted = true;
+    (async () => {
+      const [tradesData, journalData] = await Promise.all([
+        loadTrades(),
+        loadJournalEntries(),
+      ]);
+      if (!isMounted) return;
+      setTrades(tradesData);
+      setJournalEntries(journalData);
+      setTemplates(loadTemplates());
+      setDisplayMode(loadSettings().displayMode);
+    })();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const tradeId = params.get('tradeId') || undefined;

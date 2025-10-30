@@ -11,8 +11,16 @@ export default function ProjectionsPage() {
   const [displayMode, setDisplayMode] = useState<DisplayMode>('pnl');
 
   useEffect(() => {
-    setTrades(loadTrades());
-    setDisplayMode(loadSettings().displayMode);
+    let isMounted = true;
+    (async () => {
+      const tradesData = await loadTrades();
+      if (!isMounted) return;
+      setTrades(tradesData);
+      setDisplayMode(loadSettings().displayMode);
+    })();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const stats = useMemo(() => calculateStatistics(trades), [trades]);

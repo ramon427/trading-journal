@@ -15,11 +15,22 @@ export default function TradesPage() {
   const [showWeekends, setShowWeekends] = useState<boolean>(true);
 
   useEffect(() => {
-    setTrades(loadTrades());
-    setJournalEntries(loadJournalEntries());
-    const settings = loadSettings();
-    setDisplayMode(settings.displayMode);
-    setShowWeekends(settings.showWeekends);
+    let isMounted = true;
+    (async () => {
+      const [tradesData, journalData] = await Promise.all([
+        loadTrades(),
+        loadJournalEntries(),
+      ]);
+      if (!isMounted) return;
+      setTrades(tradesData);
+      setJournalEntries(journalData);
+      const settings = loadSettings();
+      setDisplayMode(settings.displayMode);
+      setShowWeekends(settings.showWeekends);
+    })();
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleAddTrade = (trade: Trade) => {
