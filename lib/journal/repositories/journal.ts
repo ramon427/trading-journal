@@ -93,6 +93,16 @@ export async function saveJournalEntries(entries: JournalEntry[]): Promise<void>
       // Update news events
       await db.delete(newsEvents)
         .where(eq(newsEvents.journalEntryId, existing[0].id));
+
+      if (entry.newsEvents && entry.newsEvents.length > 0) {
+        await db.insert(newsEvents).values(
+          entry.newsEvents.map(news => ({
+            journalEntryId: existing[0].id,
+            name: news.name,
+            time: news.time,
+          }))
+        );
+      }
     } else {
       // Insert new
       const [inserted] = await db.insert(journalEntries)
