@@ -38,43 +38,71 @@ function DashboardLayoutContent({
   const { sidebarVisible } = useSidebar();
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadData = async () => {
-      const loadPromise = new Promise<void>((resolve) => {
-        const loadedTrades = loadTrades();
-        const loadedJournals = loadJournalEntries();
+      const minLoadTime = new Promise((resolve) => setTimeout(resolve, 500));
+
+      try {
+        const [loadedTrades, loadedJournals] = await Promise.all([
+          loadTrades(),
+          loadJournalEntries(),
+        ]);
+
+        if (!isMounted) {
+          return;
+        }
+
         const settings = loadSettings();
         const loadedTheme = loadTheme();
-        
+
         setDisplayMode(settings.displayMode);
         applyTheme(loadedTheme);
-        
+
         // Apply custom theme colors
         const customization = loadThemeCustomization();
         const customColors = loadedTheme === 'dark' ? customization.dark : customization.light;
         applyThemeColors(customColors, loadedTheme === 'dark');
-        
-        // If no data exists, use dummy data
+
         if (loadedTrades.length === 0) {
           const { dummyTrades, dummyJournalEntries } = generateDummyData();
+
           setTrades(dummyTrades);
           setJournalEntries(dummyJournalEntries);
-          saveTrades(dummyTrades);
-          saveJournalEntries(dummyJournalEntries);
-          refreshAllStats(dummyTrades);
+
+          try {
+            await Promise.all([
+              saveTrades(dummyTrades),
+              saveJournalEntries(dummyJournalEntries),
+            ]);
+            refreshAllStats(dummyTrades);
+          } catch (seedError) {
+            console.error('Failed to seed dummy journal data', seedError);
+          }
         } else {
           setTrades(loadedTrades);
           setJournalEntries(loadedJournals);
           refreshAllStats(loadedTrades);
         }
-        resolve();
-      });
+      } catch (error) {
+        console.error('Failed to load dashboard data', error);
+        if (isMounted) {
+          setIsInitialLoading(false);
+        }
+        return;
+      }
 
-      const minLoadTime = new Promise((resolve) => setTimeout(resolve, 500));
-      await Promise.all([loadPromise, minLoadTime]);
-      setIsInitialLoading(false);
+      await minLoadTime;
+      if (isMounted) {
+        setIsInitialLoading(false);
+      }
     };
 
     loadData();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const handleDisplayModeChange = (mode: DisplayMode) => {

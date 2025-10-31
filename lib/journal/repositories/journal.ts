@@ -3,7 +3,7 @@
 import { db } from '@/lib/db/drizzle';
 import { getUser } from '@/lib/db/queries';
 import { journalEntries, newsEvents } from '@/lib/db/schema';
-import { eq, desc } from 'drizzle-orm';
+import { eq, and, desc } from 'drizzle-orm';
 import { JournalEntry } from '@/types/journal/trading';
 
 /**

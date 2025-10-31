@@ -160,7 +160,7 @@ export async function saveTrade(trade: Trade): Promise<Trade> {
     updatedAt: new Date(),
   };
 
-  let savedTradeId: number;
+  let savedTradeId: number | undefined;
 
   await db.transaction(async (tx) => {
     if (tradeId) {
@@ -230,17 +230,10 @@ export async function saveTrade(trade: Trade): Promise<Trade> {
   });
 
   // Return the saved trade
-  const [saved] = await db
-    .select()
-    .from(trades)
-    .where(eq(trades.id, savedTradeId))
-    .limit(1);
-
-  if (!saved) {
-    throw new Error('Failed to retrieve saved trade');
+  if (typeof savedTradeId === 'undefined') {
+    throw new Error('Failed to save trade');
   }
 
-  // Return a simplified version - full load would call loadTrades()
   return {
     ...trade,
     id: savedTradeId.toString(),
